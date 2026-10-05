@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel de Sistemas e Licenças</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700;6..12,800&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  color-scheme: light;
+  --page:#f7f8fb; --card:#ffffff; --soft:#f7f8fa;
+  --line:#e7eaf0; --line-2:#eef0f5;
+  --ink:#16233d; --ink2:#5d6b84; --muted:#8b99b0;
+  --blue:#2447c4; --blue-2:#2b4fd0; --blue-ic:#e9eefb; --blue-txt:#3b63cf;
+  --track:#e9ecf3;
+  --green:#0f8a4d; --green-bg:#ddf4e6;
+  --amber:#8a6200; --amber-bg:#fdf0d2;
+  --red:#a32218; --red-bg:#fbe3e0;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --page:#0e1117; --card:#161a22; --soft:#1a1f28;
+    --line:#242a34; --line-2:#1e232c;
+    --ink:#e9edf3; --ink2:#9aa6ba; --muted:#78849a;
+    --blue:#7d9cf5; --blue-2:#5b7ff0; --blue-ic:#1a2338; --blue-txt:#8aa6f5;
+    --track:#252b36;
+    --green:#4bcb87; --green-bg:#12301f;
+    --amber:#e6b23c; --amber-bg:#312512;
+    --red:#ef7469; --red-bg:#341b18;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --page:#0e1117; --card:#161a22; --soft:#1a1f28;
+  --line:#242a34; --line-2:#1e232c;
+  --ink:#e9edf3; --ink2:#9aa6ba; --muted:#78849a;
+  --blue:#7d9cf5; --blue-2:#5b7ff0; --blue-ic:#1a2338; --blue-txt:#8aa6f5;
+  --track:#252b36;
+  --green:#4bcb87; --green-bg:#12301f;
+  --amber:#e6b23c; --amber-bg:#312512;
+  --red:#ef7469; --red-bg:#341b18;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--page); color:var(--ink);
+  font-family:"Nunito Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size:13px; line-height:1.4; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px; margin:0 auto; padding-inline:16px; padding-block:20px 48px; display:flex; flex-direction:column; gap:16px;}
+h1,h2,h3{margin:0; font-weight:700; text-wrap:balance;}
+.tnum{font-variant-numeric:tabular-nums}
+.card{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:18px 22px;}
+.eyebrow{font-size:9.5px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--blue);}
+.ico svg{display:block}
+
+/* header */
+.top{position:relative; display:flex; gap:14px; align-items:center; padding-top:20px; overflow:hidden;}
+.top::before{content:""; position:absolute; inset:0 0 auto 0; height:4px; background:var(--blue-2);}
+.top .badge{width:36px;height:36px;border-radius:9px;background:var(--blue-ic);display:grid;place-items:center;color:var(--blue);flex:none;}
+.top h1{font-size:19px; font-weight:800; letter-spacing:-.01em; line-height:1.2; margin-top:2px;}
+.top .sub{font-size:10.5px; color:var(--muted); margin-top:3px; font-weight:600;}
+.acts{margin-left:auto; display:flex; gap:9px; flex-wrap:wrap;}
+.btn{display:inline-flex; align-items:center; gap:7px; font:inherit; font-size:11.5px; font-weight:700; cursor:pointer;
+  background:var(--card); color:var(--ink2); border:1px solid var(--line); border-radius:7px; padding:8px 13px; white-space:nowrap;}
+.btn:hover{color:var(--ink); border-color:var(--muted);}
+.btn svg{color:var(--ink2)}
+:focus-visible{outline:2px solid var(--blue); outline-offset:1px;}
+
+/* kpis */
+.kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:16px;}
+.kpi{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 18px 18px;}
+.kpi .kt{display:flex; align-items:flex-start; justify-content:space-between; gap:10px;}
+.kpi .kt b{font-size:11.5px; font-weight:700; color:var(--ink);}
+.kpi .kt span{width:27px;height:27px;border-radius:7px;background:var(--blue-ic);display:grid;place-items:center;color:var(--blue);flex:none;}
+.kpi .val{font-size:25px; font-weight:800; letter-spacing:-.015em; line-height:1.1; margin-top:22px;}
+.kpi .cap{font-size:9.5px; color:var(--muted); margin-top:7px; font-weight:600;}
+
+/* two-column band */
+.band{display:grid; grid-template-columns:1.55fr 1fr; gap:16px;}
+.band.even{grid-template-columns:1fr 1fr;}
+@media (max-width:840px){ .band,.band.even{grid-template-columns:1fr} }
+
+.shead{display:flex; align-items:flex-start; justify-content:space-between; gap:14px; margin-bottom:16px;}
+.shead h2{font-size:15px; font-weight:800; letter-spacing:-.01em; margin-top:3px;}
+.shead .col{font-size:10.5px; color:var(--blue-txt); font-weight:700; white-space:nowrap; margin-top:12px;}
+.shead.ic{align-items:center; margin-bottom:14px;}
+.shead.ic h2{display:flex; align-items:center; gap:8px; font-size:13.5px; margin-top:0; color:var(--ink);}
+.shead.ic h2 .g{color:var(--blue); display:grid; place-items:center;}
+
+/* area bars */
+.bar{padding:9px 0 11px;}
+.bar .r{display:flex; align-items:baseline; justify-content:space-between; gap:16px; margin-bottom:7px;}
+.bar .nm{font-size:10.5px; font-weight:800; letter-spacing:.055em; text-transform:uppercase; color:var(--ink); overflow-wrap:anywhere;}
+.bar .v{font-size:11px; font-weight:700; white-space:nowrap;}
+.bar .t{height:4px; border-radius:2px; background:var(--track); overflow:hidden;}
+.bar .t i{display:block; height:100%; background:var(--blue-2); border-radius:2px;}
+
+/* opportunity */
+.opp{display:flex; align-items:center; justify-content:space-between; gap:16px; padding:11px 0;}
+.opp + .opp{border-top:1px solid var(--line-2);}
+.opp .nm{font-size:10.5px; font-weight:800; letter-spacing:.055em; text-transform:uppercase;}
+.opp .sb{font-size:9.5px; color:var(--blue-txt); font-weight:700; margin-top:3px;}
+.opp .v{font-size:11px; font-weight:800; color:var(--green); white-space:nowrap; text-align:right;}
+.opp .v.n{color:var(--muted);}
+
+/* tiles */
+.tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(138px,1fr)); gap:12px;}
+.tile{border:1px solid var(--line); border-radius:8px; padding:11px 13px 13px; background:var(--card);}
+.tile .l{font-size:9.5px; color:var(--muted); font-weight:700; letter-spacing:.02em; overflow-wrap:anywhere; min-height:13px;}
+.tile .n{font-size:19px; font-weight:800; letter-spacing:-.01em; margin-top:6px; line-height:1;}
+.tile .m{font-size:9px; color:var(--blue-txt); font-weight:700; margin-top:5px;}
+
+/* table card */
+.thead-bar{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:16px;}
+.thead-bar .ttl{margin-right:auto;}
+.thead-bar .ttl h2{font-size:15px; font-weight:800; margin-top:3px; max-width:11ch; line-height:1.2;}
+.srch{position:relative; flex:1 1 190px; min-width:150px;}
+.srch svg{position:absolute; left:11px; top:50%; transform:translateY(-50%); color:var(--muted);}
+input[type=search],select{
+  font:inherit; font-size:11.5px; font-weight:600; color:var(--ink); background:var(--card);
+  border:1px solid var(--line); border-radius:7px; padding:9px 11px; width:100%; min-width:0;
+}
+input[type=search]{padding-left:32px;}
+select{flex:1 1 168px; max-width:230px; cursor:pointer;}
+input::placeholder{color:var(--muted); font-weight:600;}
+
+.tablewrap{overflow-x:auto; margin:0 -22px -18px;}
+table{border-collapse:collapse; width:100%; min-width:1120px;}
+thead th{
+  background:var(--soft); text-align:left; font-size:9px; font-weight:800; letter-spacing:.13em; text-transform:uppercase;
+  color:var(--muted); padding:11px 14px; border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+  white-space:nowrap; cursor:pointer;
+}
+thead th:first-child{padding-left:22px} thead th:last-child{padding-right:22px}
+thead th.n{text-align:right} thead th.c{text-align:center}
+thead th:hover{color:var(--ink)}
+thead th.sorted{color:var(--blue)}
+thead th.sorted:after{content:" ↓"} thead th.sorted.asc:after{content:" ↑"}
+tbody td{padding:12px 14px; border-bottom:1px solid var(--line-2); vertical-align:middle;}
+tbody td:first-child{padding-left:22px} tbody td:last-child{padding-right:22px}
+tbody tr:hover{background:var(--soft)}
+td.sys{font-size:10.5px; font-weight:800; letter-spacing:.055em; text-transform:uppercase;}
+td.sys small{display:block; font-size:8.5px; font-weight:700; letter-spacing:.06em; color:var(--muted); margin-top:3px; max-width:38ch;}
+td.area{font-size:9.5px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--ink2); max-width:22ch;}
+td.cc{font-size:9.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); max-width:24ch;}
+td.val{text-align:right; font-size:11.5px; font-weight:800; white-space:nowrap;}
+td.cob{font-size:9.5px; font-weight:700; color:var(--blue-txt); white-space:nowrap;}
+td.per{font-size:9.5px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--ink2); white-space:nowrap}
+td.per.na{color:var(--muted); font-weight:600}
+td.lic{text-align:center; font-size:10px; font-weight:700; color:var(--ink2); white-space:nowrap;}
+td.lic.na{color:var(--muted); font-weight:600;}
+.pill{display:inline-flex; align-items:center; gap:5px; font-size:9.5px; font-weight:800; padding:4px 9px; border-radius:99px; white-space:nowrap;}
+.pill.ok{background:var(--green-bg); color:var(--green)}
+.pill.wr{background:var(--amber-bg); color:var(--amber)}
+.pill.bd{background:var(--red-bg); color:var(--red)}
+.pill.off{background:var(--soft); color:var(--muted); border:1px solid var(--line)}
+tbody tr.off td{opacity:.5}
+tbody tr.off td.sys{text-decoration:line-through; text-decoration-thickness:1px}
+/* painéis clicáveis */
+.bar{cursor:pointer; border-radius:7px; padding-inline:9px; margin-inline:-9px; transition:background .12s}
+.bar:hover{background:var(--soft)}
+.bar.on .nm{color:var(--blue)}
+.bars.tem-sel .bar:not(.on){opacity:.42}
+.tile{cursor:pointer; transition:border-color .12s, background .12s}
+.tile:hover{border-color:var(--muted)}
+.tile.on{border-color:var(--blue); background:var(--blue-ic)}
+.tile.on .l{color:var(--blue-txt)}
+.tiles.tem-sel .tile:not(.on){opacity:.45}
+.bar:focus-visible,.tile:focus-visible{outline:2px solid var(--blue); outline-offset:2px}
+
+/* faixa de filtros ativos */
+#chips{display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:0 2px}
+#chips .lb{font-size:10px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--muted)}
+.chip{display:inline-flex; align-items:center; gap:7px; font:inherit; font-size:11.5px; font-weight:700; cursor:pointer;
+  background:var(--blue-ic); color:var(--blue-txt); border:1px solid transparent; border-radius:99px; padding:6px 11px}
+.chip .k{font-size:9px; letter-spacing:.1em; text-transform:uppercase; opacity:.7}
+.chip .x{font-size:14px; line-height:1; opacity:.6; margin-left:1px}
+.chip:hover{border-color:var(--blue)} .chip:hover .x{opacity:1}
+.chip.clr{background:transparent; color:var(--muted); border-color:var(--line)}
+.chip.clr:hover{color:var(--ink); border-color:var(--muted)}
+
+#inativos{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:13px 18px}
+#inativos label{display:flex; align-items:flex-start; gap:10px; cursor:pointer; font-size:12px; color:var(--ink2); line-height:1.5}
+#inativos input{margin:1px 0 0; accent-color:var(--blue); width:15px; height:15px; flex:none; cursor:pointer}
+#inativos b{color:var(--ink)}
+.pill .d{width:5px;height:5px;border-radius:50%;background:currentColor;flex:none}
+tfoot td{padding:13px 14px; font-size:11px; font-weight:800; border-top:1px solid var(--line); background:var(--soft);}
+tfoot td:first-child{padding-left:22px} tfoot td:last-child{padding-right:22px}
+.empty{padding:30px 0; text-align:center; color:var(--muted); font-weight:700; font-size:11.5px;}
+footer{font-size:9.5px; color:var(--muted); line-height:1.7; padding:0 4px; font-weight:600;}
+footer b{color:var(--ink2); font-weight:800;}
+
+@media (max-width:560px){
+  .card{padding:16px 15px}
+  .tablewrap{margin:0 -15px -16px}
+  thead th:first-child,tbody td:first-child,tfoot td:first-child{padding-left:15px}
+  thead th:last-child,tbody td:last-child,tfoot td:last-child{padding-right:15px}
+  .top{flex-wrap:wrap} .acts{margin-left:0; width:100%}
+  .thead-bar .ttl h2{max-width:none}
+}
+@media print{
+  body{background:#fff}
+  .wrap{max-width:none; padding:0; gap:12px}
+  .acts,.srch,select,#theme{display:none !important}
+  .card,.kpi,.tile{break-inside:avoid; box-shadow:none}
+  .band{grid-template-columns:1.55fr 1fr}
+  .tablewrap{overflow:visible} table{min-width:0}
+  tbody tr{break-inside:avoid}
+}
+
+/* estado de carregamento / erro */
+#estado .ld{display:flex;align-items:center;gap:11px;color:var(--ink2);font-weight:700;font-size:13px}
+#estado .sp{width:15px;height:15px;border:2px solid var(--line);border-top-color:var(--blue);border-radius:50%;animation:g .7s linear infinite;flex:none}
+@keyframes g{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){#estado .sp{animation-duration:2.4s}}
+#estado .er strong{font-size:14px;color:var(--red)}
+#estado .er p{margin:7px 0 0;font-size:12.5px;color:var(--ink2);max-width:82ch;white-space:pre-wrap;word-break:break-word}
+#estado .er p.raw{font-family:ui-monospace,Menlo,monospace;font-size:11px;background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:9px 11px;max-height:180px;overflow:auto}
+#estado .er .hint{color:var(--muted);font-size:11.5px}
+#estado .er code{font-family:ui-monospace,Menlo,monospace;font-size:11px;background:var(--soft);padding:1px 5px;border-radius:4px}
+#estado .er .btn{margin-top:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <section class="card top">
+    <span class="badge"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2.5 7.5 12 12l9.5-4.5L12 3Z"/><path d="M2.5 12 12 16.5 21.5 12"/><path d="M2.5 16.5 12 21l9.5-4.5"/></svg></span>
+    <div>
+      <div class="eyebrow">Gestão de Tecnologia</div>
+      <h1>Painel de Sistemas e Licenças</h1>
+      <div class="sub" id="sub">Consultando a Nekt…</div>
+    </div>
+    <div class="acts">
+      <button class="btn" id="xls" type="button" hidden><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9 13 6 5M15 13l-6 5"/></svg>Exportar Excel</button>
+      <button class="btn" id="prt" type="button"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>Imprimir / PDF</button>
+      <button class="btn" id="theme" type="button">Tema</button>
+    </div>
+  </section>
+
+  <section class="card" id="estado" hidden></section>
+  <section class="kpis" id="kpis"></section>
+  <section id="chips" hidden></section>
+  <section id="inativos" hidden></section>
+
+  <section class="band">
+    <div class="card">
+      <div class="shead"><div><div class="eyebrow">Custo recorrente</div><h2>Maiores despesas por área</h2></div><span class="col">Mensal</span></div>
+      <div id="c-area"></div>
+    </div>
+    <div class="card">
+      <div class="shead"><div><div class="eyebrow">Licenciamento</div><h2>Capacidade e oportunidade</h2></div></div>
+      <div id="c-lic"></div>
+    </div>
+  </section>
+
+  <section class="band even">
+    <div class="card">
+      <div class="shead ic"><h2><span class="g"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 9h8M8 13h8M8 17h4"/></svg></span>Forma de cobrança</h2></div>
+      <div class="tiles" id="t-forma"></div>
+    </div>
+    <div class="card">
+      <div class="shead ic"><h2><span class="g"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20M6 15h3"/></svg></span>Origem do pagamento</h2></div>
+      <div class="tiles" id="t-origem"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="thead-bar">
+      <div class="ttl"><div class="eyebrow">Portfólio completo</div><h2>Sistemas contratados</h2></div>
+      <div class="srch">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="search" id="f-q" placeholder="Buscar sistema" aria-label="Buscar sistema">
+      </div>
+      <select id="f-area" aria-label="Área"><option value="">Todas</option></select>
+      <select id="f-forma" aria-label="Forma de cobrança"><option value="">Todos os tipos de plano</option></select>
+      <select id="f-origem" aria-label="Origem do pagamento"><option value="">Todas as origens de pagamento</option></select>
+    </div>
+    <div class="tablewrap">
+      <table id="tbl">
+        <thead><tr>
+          <th data-k="sistema">Sistema</th>
+          <th data-k="area">Área</th>
+          <th data-k="centro_custo">Centro de custo</th>
+          <th data-k="mensal" class="n">Custo mensal</th>
+          <th data-k="forma">Cobrança</th>
+          <th data-k="periodicidade">Periodicidade</th>
+          <th data-k="licfrac" class="c">Licenças</th>
+          <th data-k="situacao">Situação</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+        <tfoot id="tfoot"></tfoot>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    <b>Fonte</b> — banco DB_SISTEMA (tabela 307310066) do Pipefy, lido do data warehouse Nekt a cada carregamento desta página.<br>
+    <b>Critérios</b> — custo anual = mensalidade × 12; o valor de setup é único e não entra no anual. Contratos anuais parcelados aparecem pela parcela mensal registrada no cadastro. Oportunidade de licença = licenças paradas × (mensalidade ÷ licenças contratadas).
+  </footer>
+</div>
+
+<script>
+let DATA = [];
+let ATUALIZADO = null;
+let HOJE = null;
+let incluirInativos = false;
+
+const BRL  = n => n.toLocaleString('pt-BR',{style:'currency',currency:'BRL',minimumFractionDigits:2,maximumFractionDigits:2});
+const BRL0 = n => n.toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
+const shortCC = s => String(s||'—')
+  .replace(/ SPE EMPREENDIMENTOS IMOBILIARIOS LTDA/ig,'')
+  .replace(/ ENGENHARIA E PARTICIPAÇÕES SA/ig,'')
+  .replace(/ INCORPORACOES( \d+)? SPE LTDA/ig,'')
+  .replace(/ INCORPORACOES LTDA/ig,'')
+  .replace(/ RESIDENCIAL INCORPORACOES SPE LTDA/ig,'')
+  .replace(/,\s*/g,' + ');
+const curto = n => n >= 1e6 ? 'R$ ' + (n/1e6).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' mi'
+                 : n >= 1e3 ? 'R$ ' + (n/1e3).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1}) + ' mil'
+                 : BRL0(n);
+const dataBR = iso => { const [a,m,d] = String(iso||'').split('-'); return d ? `${d}/${m}` : '—'; };
+const el  = id => document.getElementById(id);
+const esc = s => String(s??'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function prep(){
+  DATA.forEach(d => {
+    d.licfrac  = d.lic_c ? d.lic_u / d.lic_c : 2;
+    d.unit     = d.lic_c ? d.mensal / d.lic_c : 0;
+    d.livres   = (d.lic_c != null && d.lic_u != null) ? Math.max(0, d.lic_c - d.lic_u) : 0;
+    d.cancelaEm  = d.data_cancelamento || null;
+    d.cancelado  = !!(d.cancelaEm && HOJE && d.cancelaEm < HOJE);
+    d.aCancelar  = !!(d.cancelaEm && HOJE && d.cancelaEm >= HOJE);
+    d.situacao   = d.cancelado ? 'Não ativo'
+                 : d.aCancelar ? 'Cancela em ' + dataBR(d.cancelaEm)
+                 : d.mensal === 0 ? 'Cadastro incompleto'
+                 : d.livres > 0 ? 'Revisar licenças' : 'Ativo';
+  });
+}
+
+const F = {area:'', forma:'', origem:'', q:''};
+function popularFiltros(){
+  const uniq = k => [...new Set(DATA.map(d=>d[k]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  const formas = [...new Set(DATA.flatMap(d=>(d.forma||'').split(',').map(s=>s.trim()).filter(x=>x&&x!=='—')))].sort();
+  const fill = (id,vals) => vals.forEach(v => el(id).insertAdjacentHTML('beforeend',`<option value="${esc(v)}">${esc(v)}</option>`));
+  fill('f-area',uniq('area')); fill('f-forma',formas); fill('f-origem',uniq('origem'));
+}
+
+const view = (exceto) => {
+  const q = F.q.trim().toLowerCase();
+  return DATA.filter(d =>
+    (incluirInativos || !d.cancelado) &&
+    (exceto === 'area'   || !F.area   || d.area === F.area) &&
+    (exceto === 'forma'  || !F.forma  || (d.forma||'').includes(F.forma)) &&
+    (exceto === 'origem' || !F.origem || d.origem === F.origem) &&
+    (!q || (d.sistema+' '+d.fornecedor+' '+d.obs).toLowerCase().includes(q)));
+};
+
+let sortK = 'mensal', sortAsc = false, atual = [];
+
+const ROTULOS = {area:'Área', forma:'Cobrança', origem:'Origem', q:'Busca'};
+const SELETOR  = {area:'f-area', forma:'f-forma', origem:'f-origem', q:'f-q'};
+
+function aplicar(dim, valor){
+  F[dim] = (F[dim] === valor) ? '' : valor;   // clicar de novo remove
+  const sel = el(SELETOR[dim]); if (sel) sel.value = F[dim];
+  render();
+}
+
+function limpar(dim){
+  if (dim) { F[dim] = ''; const sel = el(SELETOR[dim]); if (sel) sel.value = ''; }
+  else Object.keys(F).forEach(k => { F[k] = ''; const sl = el(SELETOR[k]); if (sl) sl.value = ''; });
+  render();
+}
+
+function renderChips(){
+  const box = el('chips');
+  const ativos = Object.keys(ROTULOS).filter(k => F[k]);
+  if (!ativos.length) { box.hidden = true; box.innerHTML = ''; return; }
+  box.hidden = false;
+  box.innerHTML = `<span class="lb">Filtrando por</span>`
+    + ativos.map(k => `<button class="chip" data-dim="${k}">
+        <span class="k">${ROTULOS[k]}</span>${esc(F[k])}<span class="x" aria-hidden="true">×</span>
+      </button>`).join('')
+    + `<button class="chip clr" data-dim="">Limpar tudo</button>`;
+  box.querySelectorAll('.chip').forEach(b =>
+    b.addEventListener('click', () => limpar(b.dataset.dim || null)));
+}
+
+// clique e teclado nos painéis
+[['c-area','area'],['t-forma','forma'],['t-origem','origem']].forEach(([id,dim]) => {
+  const node = el(id);
+  const alvo = e => e.target.closest('[data-v]');
+  node.addEventListener('click', e => { const a = alvo(e); if (a) aplicar(dim, a.dataset.v); });
+  node.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const a = alvo(e); if (!a) return;
+    e.preventDefault(); aplicar(dim, a.dataset.v);
+  });
+});
+
+function render(){
+  const v = atual = view();
+  const total  = v.reduce((s,d)=>s+d.mensal,0);
+  const lic    = v.filter(d => d.lic_c != null && d.lic_u != null);
+  const livres = lic.reduce((s,d)=>s+d.livres,0);
+  const econ   = lic.reduce((s,d)=>s+d.livres*d.unit,0);
+
+  const inativos = DATA.filter(d => d.cancelado);
+  const gastoInativo = inativos.reduce((s,d)=>s+d.mensal,0);
+  const universo = incluirInativos ? DATA.length : DATA.length - inativos.length;
+  el('sub').textContent = `Dados da Nekt em ${ATUALIZADO || '—'}`
+    + (v.length === universo ? '' : ` · recorte com ${v.length} de ${universo} sistemas`);
+
+  const box = el('inativos');
+  if (inativos.length) {
+    box.hidden = false;
+    box.innerHTML = `<label><input type="checkbox" id="chk-inativos" ${incluirInativos?'checked':''}>
+      <span><b>${inativos.length} sistema${inativos.length>1?'s':''} não ativo${inativos.length>1?'s':''}</b>
+      ${incluirInativos ? 'sendo contado' + (inativos.length>1?'s':'') + ' nos totais'
+                        : 'fora dos totais'} — ${BRL0(gastoInativo)}/mês que a data de cancelamento já encerrou.
+      Marque para incluir na conta.</span></label>`;
+    el('chk-inativos').addEventListener('change', e => { incluirInativos = e.target.checked; render(); });
+  } else { box.hidden = true; }
+
+  const gl = {
+    camadas:'<path d="M12 3 2.5 7.5 12 12l9.5-4.5L12 3Z"/><path d="M2.5 12 12 16.5 21.5 12"/><path d="M2.5 16.5 12 21l9.5-4.5"/>',
+    cartao:'<rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/>',
+    agenda:'<rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M8 3v4M16 3v4M3 11h18"/>'
+  };
+  const K = (ic,lab,val,cap) => `<div class="kpi"><div class="kt"><b>${lab}</b><span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${gl[ic]}</svg></span></div><div class="val tnum">${val}</div><div class="cap">${cap}</div></div>`;
+  el('kpis').innerHTML =
+    K('camadas','Sistemas ativos', v.length, 'Portfólio total cadastrado') +
+    K('cartao','Custo mensal', curto(total), 'Custo recorrente consolidado') +
+    K('agenda','Custo anual', curto(total*12), 'Projeção do custo mensal por 12 meses');
+
+  renderChips();
+  const porArea = (() => {
+    const m = new Map();
+    view('area').forEach(d => m.set(d.area||'—', (m.get(d.area||'—')||0) + d.mensal));
+    let lista = [...m].sort((a,b)=>b[1]-a[1]).slice(0,7);
+    // a área selecionada nunca some da lista, mesmo fora do top 7
+    if (F.area && !lista.some(([nm])=>nm===F.area) && m.has(F.area)) lista = [...lista.slice(0,6), [F.area, m.get(F.area)]];
+    return lista;
+  })();
+  const max = Math.max(...porArea.map(r=>r[1]), 1);
+  el('c-area').className = 'bars' + (F.area ? ' tem-sel' : '');
+  el('c-area').innerHTML = porArea.length ? porArea.map(([nm,val])=>`
+    <div class="bar${F.area===nm?' on':''}" data-v="${esc(nm)}" role="button" tabindex="0"
+         aria-pressed="${F.area===nm}" title="${F.area===nm?'Clique para remover o filtro':'Filtrar por '+esc(nm)}">
+      <div class="r"><span class="nm">${esc(nm)}</span><span class="v tnum">${BRL(val)}</span></div>
+      <div class="t"><i style="width:${Math.max(val/max*100,1)}%"></i></div>
+    </div>`).join('') : `<p class="empty">Nada neste recorte.</p>`;
+
+  const ord = lic.filter(d => d.livres > 0).sort((a,b)=>(b.livres*b.unit)-(a.livres*a.unit) || b.mensal-a.mensal);
+  el('c-lic').innerHTML = ord.length ? ord.map(d=>`
+    <div class="opp">
+      <div><div class="nm">${esc(d.sistema)}</div>
+        <div class="sb">${d.livres} licença(s) disponível(is) de ${d.lic_c}</div></div>
+      <div class="v tnum">${BRL(d.livres*d.unit)}/mês</div>
+    </div>`).join('')
+    : `<p class="empty">${lic.length ? 'Todas as licenças estão em uso neste recorte.' : 'Nenhum sistema com licenças contadas neste recorte.'}</p>`;
+
+  const agrupa = (rows, chave) => { const m = new Map();
+    rows.forEach(d => {
+      const ps = chave === 'forma' ? (d.forma||'—').split(',').map(s=>s.trim()).filter(Boolean) : [d[chave]||'—'];
+      ps.forEach(p => { const o = m.get(p)||{n:0,val:0}; o.n++; o.val += d.mensal/ps.length; m.set(p,o); });
+    });
+    return [...m].sort((a,b)=>b[1].n-a[1].n || b[1].val-a[1].val); };
+  const tiles = (node, rows, dim) => {
+    node.className = 'tiles' + (F[dim] ? ' tem-sel' : '');
+    node.innerHTML = rows.length ? rows.map(([k,{n,val}])=>`
+      <div class="tile${F[dim]===k?' on':''}" data-v="${esc(k)}" role="button" tabindex="0"
+           aria-pressed="${F[dim]===k}" title="${F[dim]===k?'Clique para remover o filtro':'Filtrar por '+esc(k)}">
+        <div class="l">${esc(k)}</div><div class="n tnum">${n}</div><div class="m tnum">${BRL0(val)}/mês</div>
+      </div>`).join('') : `<p class="empty">Nada neste recorte.</p>`;
+  };
+  tiles(el('t-forma'),  agrupa(view('forma'),  'forma'),  'forma');
+  tiles(el('t-origem'), agrupa(view('origem'), 'origem'), 'origem');
+
+  const sorted = [...v].sort((a,b)=>{
+    const x = sortK === 'periodicidade' ? (a.periodicidade || 'zzz') : a[sortK];
+    const y = sortK === 'periodicidade' ? (b.periodicidade || 'zzz') : b[sortK];
+    if (typeof x === 'number' || typeof y === 'number') return sortAsc ? x-y : y-x;
+    return sortAsc ? String(x).localeCompare(String(y),'pt-BR') : String(y).localeCompare(String(x),'pt-BR');
+  });
+  const pill = s => s === 'Ativo' ? `<span class="pill ok"><i class="d"></i>Ativo</span>`
+              : s === 'Não ativo' ? `<span class="pill off">■ Não ativo</span>`
+              : s.startsWith('Cancela em') ? `<span class="pill wr">◷ ${esc(s)}</span>`
+              : s === 'Revisar licenças' ? `<span class="pill wr">↘ Revisar licenças</span>`
+              : `<span class="pill bd">▲ Cadastro incompleto</span>`;
+  el('tbody').innerHTML = sorted.length ? sorted.map(d=>`
+    <tr class="${d.cancelado?'off':''}">
+      <td class="sys">${esc(d.sistema)}<small>${esc(d.fornecedor)}</small></td>
+      <td class="area">${esc(d.area)}</td>
+      <td class="cc">${esc(shortCC(d.centro_custo))}</td>
+      <td class="val tnum">${d.mensal ? BRL(d.mensal) : '—'}</td>
+      <td class="cob">${esc(d.forma)}</td>
+      <td class="per${d.periodicidade?'':' na'}">${esc(d.periodicidade || '—')}</td>
+      <td class="lic tnum ${d.lic_c==null?'na':''}">${d.lic_c != null ? `${d.lic_u} / ${d.lic_c}` : 'Não informado'}</td>
+      <td>${pill(d.situacao)}</td>
+    </tr>`).join('') : `<tr><td colspan="8" class="empty">Nenhum sistema neste recorte.</td></tr>`;
+  el('tfoot').innerHTML = `<tr>
+    <td colspan="3">Total · ${sorted.length} sistema${sorted.length===1?'':'s'}</td>
+    <td class="val tnum">${BRL(total)}</td><td></td><td></td>
+    <td class="lic tnum">${lic.length ? lic.reduce((s,d)=>s+d.lic_u,0)+' / '+lic.reduce((s,d)=>s+d.lic_c,0) : '—'}</td>
+    <td>${livres ? `<span class="pill wr">↘ ${livres} paradas · ${BRL0(econ)}/mês</span>` : `<span class="pill ok"><i class="d"></i>Sem folga</span>`}</td></tr>`;
+
+  document.querySelectorAll('#tbl thead th').forEach(th=>{
+    th.classList.toggle('sorted', th.dataset.k===sortK);
+    th.classList.toggle('asc', th.dataset.k===sortK && sortAsc);
+  });
+}
+
+[['f-area','area'],['f-forma','forma'],['f-origem','origem'],['f-q','q']]
+  .forEach(([id,k]) => el(id).addEventListener('input', e => { F[k] = e.target.value; render(); }));
+document.querySelectorAll('#tbl thead th').forEach(th => th.addEventListener('click', () => {
+  const k = th.dataset.k;
+  if (k === sortK) sortAsc = !sortAsc; else { sortK = k; sortAsc = !['mensal','licfrac'].includes(k); }
+  render();
+}));
+el('prt').addEventListener('click', () => window.print());
+el('theme').addEventListener('click', () => {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const dark = cur ? cur === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  document.documentElement.setAttribute('data-theme', dark ? 'light' : 'dark');
+});
+
+/* Exportar Excel — download direto do navegador */
+function ligarExport(){
+  if (typeof XLSX === 'undefined') return;
+  const btn = el('xls');
+  btn.hidden = false;
+  btn.addEventListener('click', () => {
+    const linhas = atual.map(d => ({
+      'Sistema': d.sistema, 'Fornecedor': d.fornecedor, 'Área': d.area,
+      'Centro de custo': d.centro_custo, 'Origem do pagamento': d.origem,
+      'Forma de cobrança': d.forma,
+      'Periodicidade': d.periodicidade || null,
+      'Custo mensal (R$)': d.mensal || null,
+      'Custo anual (R$)': d.mensal ? d.mensal*12 : null,
+      'Setup (R$)': d.setup || null,
+      'Licenças contratadas': d.lic_c, 'Licenças utilizadas': d.lic_u,
+      'Licenças paradas': d.lic_c != null ? d.livres : null,
+      'Custo das licenças paradas (R$/mês)': d.lic_c != null && d.livres ? +(d.livres*d.unit).toFixed(2) : null,
+      'Data de cancelamento': d.cancelaEm || null,
+      'Situação': d.situacao, 'Observações': d.obs
+    }));
+    const ws = XLSX.utils.json_to_sheet(linhas);
+    ws['!cols'] = [{wch:34},{wch:44},{wch:26},{wch:34},{wch:20},{wch:20},{wch:15},{wch:16},{wch:16},{wch:13},{wch:20},{wch:19},{wch:16},{wch:30},{wch:21},{wch:26},{wch:60}];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Sistemas');
+    XLSX.writeFile(wb, `painel-sistemas-${(ATUALIZADO||'').slice(0,10).replace(/\//g,'-')}.xlsx`);
+  });
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   ENDEREÇO DA API
+
+   Deixe '/api/dados' se o site e a API estiverem atrás do mesmo CloudFront
+   (o comportamento /api/* aponta para o API Gateway). Nesse caso não há CORS.
+
+   Se o site estiver num domínio e a API em outro, troque pela URL completa
+   do API Gateway e defina ALLOWED_ORIGIN na Lambda com a URL do site:
+     const API_URL = 'https://abc123.execute-api.sa-east-1.amazonaws.com/dados';
+   ─────────────────────────────────────────────────────────────────────────── */
+const API_URL = '/api/dados';
+
+/* Boot — busca os dados na Nekt via API_URL */
+function estado(html){
+  el('kpis').innerHTML = '';
+  el('estado').hidden = false;
+  el('estado').innerHTML = html;
+}
+
+async function carregar(){
+  estado('<div class="ld"><span class="sp"></span>Consultando a Nekt…</div>');
+  try{
+    const r = await fetch(API_URL, {headers:{'Accept':'application/json'}, cache:'no-store'});
+    const tipo = r.headers.get('content-type') || 'sem content-type';
+    const txt = await r.text();
+    let j = null; try { j = JSON.parse(txt); } catch (_) {}
+
+    if (j && j.erro) throw new Error(j.erro);
+
+    if (!j) {
+      const ehHtml = /^\s*<(!doctype|html)/i.test(txt);
+      throw new Error(
+        `A rota ${API_URL} devolveu ${r.status} com "${tipo}", e o corpo não é JSON.`
+        + (ehHtml ? ' Veio uma página HTML no lugar dos dados — sinal de que a rota da API não está respondendo. Confira o comportamento /api/* no CloudFront e se a Lambda está publicada.' : '')
+        + `\n\nInício da resposta:\n${txt.trim().slice(0,300) || '(vazio)'}`);
+    }
+
+    if (!Array.isArray(j.linhas)) {
+      throw new Error(`A rota respondeu ${r.status} em JSON, mas sem a lista de sistemas.`
+        + `\n\nChaves recebidas: ${Object.keys(j).join(', ') || '(nenhuma)'}`);
+    }
+    DATA = j.linhas;
+    ATUALIZADO = j.atualizado_em || null;
+    HOJE = j.hoje || null;
+    el('estado').hidden = true;
+    prep();
+    popularFiltros();
+    ligarExport();
+    render();
+  } catch (e) {
+    const msg = String(e.message || e);
+    const corte = msg.indexOf('\n\n');
+    const cabeca = corte === -1 ? msg : msg.slice(0, corte);
+    const bruto  = corte === -1 ? '' : msg.slice(corte + 2);
+    estado(`<div class="er">
+      <strong>Não foi possível carregar os dados.</strong>
+      <p>${esc(cabeca)}</p>
+      ${bruto ? `<p class="raw">${esc(bruto)}</p>` : ''}
+      <p class="hint">Se o problema persistir, verifique a variável <code>NEKT_API_KEY</code> nas variáveis de ambiente da função Lambda e se a chave continua válida na Nekt.</p>
+      <button class="btn" onclick="carregar()">Tentar de novo</button>
+    </div>`);
+  }
+}
+
+carregar();
+</script>
+</body>
+</html>

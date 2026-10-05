@@ -1,0 +1,8 @@
+{
+  "name": "painel-sistemas-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Lambda que consulta o DB_SISTEMA na Nekt e devolve JSON para o painel.",
+  "main": "index.mjs"
+}
